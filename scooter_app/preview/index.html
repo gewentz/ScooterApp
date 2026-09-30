@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M0Robot Cockpit - Patinete Elétrico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090D16;
+      --surface: #111726;
+      --surface-light: #1A2238;
+      --card-border: #232E47;
+      --cyan: #00E5FF;
+      --green: #00E676;
+      --orange: #FF6D00;
+      --red: #FF334B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --theme-color: #00E5FF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .phone-container {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 40px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 229, 255, 0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      padding: 24px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .device-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 16px var(--green); }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    .device-name {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+
+    .device-rssi {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    /* Content Area */
+    .content {
+      padding: 16px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Speedometer Container */
+    .speedometer-card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 20px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    #gaugeCanvas {
+      width: 260px;
+      height: 260px;
+    }
+
+    .speed-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -42%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .mode-pill {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 12px;
+      border-radius: 20px;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--theme-color);
+      border: 1px solid var(--theme-color);
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+      transition: all 0.3s ease;
+    }
+
+    .speed-digits {
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+      font-feature-settings: "tnum";
+    }
+
+    .speed-unit {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .power-meter {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Accelerator Slider (Simulation) */
+    .accel-slider-box {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .accel-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .accel-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--surface-light);
+      outline: none;
+    }
+
+    .accel-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--theme-color);
+      box-shadow: 0 0 12px var(--theme-color);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .accel-slider::-webkit-slider-thumb:active {
+      transform: scale(1.25);
+    }
+
+    /* Controls Bar */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .btn-control {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 12px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--text-muted);
+    }
+
+    .btn-control:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .btn-control:active {
+      transform: scale(0.95);
+    }
+
+    .btn-control.active {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+    }
+
+    .btn-control.active.sport {
+      background: rgba(255, 109, 0, 0.15);
+      border-color: var(--orange);
+      color: var(--orange);
+      box-shadow: 0 0 15px rgba(255, 109, 0, 0.25);
+    }
+
+    .btn-control.active.locked {
+      background: rgba(255, 51, 75, 0.15);
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 0 15px rgba(255, 51, 75, 0.25);
+    }
+
+    .btn-control svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+    }
+
+    .btn-control span {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    /* Battery Card */
+    .battery-card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .battery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .battery-volts {
+      background: var(--surface-light);
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .battery-track {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-light);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .battery-fill {
+      height: 100%;
+      width: 85%;
+      background: var(--green);
+      border-radius: 4px;
+      box-shadow: 0 0 12px var(--green);
+      transition: width 0.4s ease;
+    }
+
+    .battery-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .battery-percent {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--green);
+    }
+
+    .battery-range {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Telemetry Grid */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .telemetry-item {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .telemetry-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .telemetry-value {
+      font-size: 16px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Terminal Console */
+    .terminal-box {
+      background: #05080E;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      height: 100px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+    }
+
+    .log-entry {
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .log-tx { color: var(--cyan); }
+    .log-rx { color: var(--green); }
+    .log-warn { color: var(--orange); }
+
+    /* Custom scrollbar */
+    .terminal-box::-webkit-scrollbar {
+      width: 4px;
+    }
+    .terminal-box::-webkit-scrollbar-thumb {
+      background: var(--surface-light);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="phone-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="device-badge">
+        <div class="pulse-dot"></div>
+        <div>
+          <div class="device-name">Gabriel Wentz</div>
+          <div class="device-rssi">M0Robot Conectado • RSSI: -52 dBm</div>
+        </div>
+      </div>
+      <div class="status-tag">CONECTADO</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Speedometer Card -->
+      <div class="speedometer-card">
+        <canvas id="gaugeCanvas" width="520" height="520"></canvas>
+        <div class="speed-overlay">
+          <div id="modePill" class="mode-pill">MODO DRIVE</div>
+          <div class="speed-digits" id="speedDisplay">0.0</div>
+          <div class="speed-unit">km/h</div>
+          <div class="power-meter">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+            </svg>
+            <span id="powerDisplay">0 W</span>
+          </div>
+        </div>
+
+        <!-- Throttle Slider (Simulator) -->
+        <div class="accel-slider-box">
+          <div class="accel-label">
+            <span>Acelerador (Simulador)</span>
+            <span id="throttleValue">0%</span>
+          </div>
+          <input type="range" id="throttleSlider" class="accel-slider" min="0" max="100" value="0">
+        </div>
+      </div>
+
+      <!-- Quick Control Bar -->
+      <div class="controls-grid">
+        <!-- Farol -->
+        <button id="btnHeadlight" class="btn-control" onclick="toggleHeadlight()">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+          </svg>
+          <span id="labelHeadlight">Farol</span>
+        </button>
+
+        <!-- Modo -->
+        <button id="btnMode" class="btn-control active" onclick="cycleMode()">
+          <svg viewBox="0 0 24 24">
+            <path d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.28-10.43zM10.59 15.41a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/>
+          </svg>
+          <span id="labelMode">DRIVE</span>
+        </button>
+
+        <!-- Cruise -->
+        <button id="btnCruise" class="btn-control" onclick="toggleCruise()">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+          </svg>
+          <span id="labelCruise">Piloto</span>
+        </button>
+
+        <!-- Trava -->
+        <button id="btnLock" class="btn-control" onclick="toggleLock()">
+          <svg viewBox="0 0 24 24">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+          </svg>
+          <span id="labelLock">Trava</span>
+        </button>
+      </div>
+
+      <!-- Battery Card -->
+      <div class="battery-card">
+        <div class="battery-header">
+          <span>BATERIA DO VEÍCULO</span>
+          <div class="battery-volts" id="voltageDisplay">38.4 V</div>
+        </div>
+        <div class="battery-track">
+          <div class="battery-fill" id="batteryBar" style="width: 85%;"></div>
+        </div>
+        <div class="battery-footer">
+          <div class="battery-percent" id="batteryPercent">85%</div>
+          <div class="battery-range" id="rangeDisplay">~21.2 km restantes</div>
+        </div>
+      </div>
+
+      <!-- Telemetry Grid -->
+      <div class="telemetry-grid">
+        <div class="telemetry-item">
+          <div class="telemetry-title">Distância Viagem</div>
+          <div class="telemetry-value" id="tripDisplay">2.84 km</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-title">Odômetro Total</div>
+          <div class="telemetry-value" id="totalDisplay">148.2 km</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-title">Temp. Controladora</div>
+          <div class="telemetry-value" id="tempDisplay">31.5 °C</div>
+        </div>
+        <div class="telemetry-item">
+          <div class="telemetry-title">Modo de Partida</div>
+          <div class="telemetry-value" id="startModeDisplay">Zero-Start</div>
+        </div>
+      </div>
+
+      <!-- Bluetooth LE Live Packet Console -->
+      <div class="terminal-box" id="terminalLog">
+        <div class="log-entry log-rx">[BLE READY] Conectado à porta serial 0000ffe1</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- ESTADO LOCAL DO PATINETE ---
+    const state = {
+      speed: 0.0,
+      targetSpeed: 0.0,
+      throttle: 0,
+      mode: 1, // 0: Eco, 1: Drive, 2: Sport
+      headlight: false,
+      locked: false,
+      cruise: false,
+      battery: 85,
+      voltage: 38.4,
+      tripKm: 2.84,
+      totalKm: 148.2,
+      temperature: 31.5,
+      startMode: 'Zero-Start'
+    };
+
+    const MODES = [
+      { name: 'ECO', maxSpeed: 15, color: '#00E676' },
+      { name: 'DRIVE', maxSpeed: 20, color: '#00E5FF' },
+      { name: 'SPORT', maxSpeed: 30, color: '#FF6D00' }
+    ];
+
+    // --- PROTOCOLO DE PACOTES (M0ROBOT LEBITEC ESC) ---
+    function calcChecksum(bytes) {
+      let sum = 0;
+      for (let i = 2; i < bytes.length; i++) {
+        sum += bytes[i];
+      }
+      return (sum & 0xFFFF) ^ 0xFFFF;
+    }
+
+    function buildPacket(reg, val) {
+      const bytes = [0x55, 0xAA, 0x04, 0x20, 0x02, reg, val, 0x00];
+      const chk = calcChecksum(bytes);
+      bytes.push(chk & 0xFF, (chk >> 8) & 0xFF);
+      return bytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+    }
+
+    function logPacket(type, text, className) {
+      const box = document.getElementById('terminalLog');
+      const div = document.createElement('div');
+      div.className = `log-entry ${className}`;
+      div.innerText = `[${type}] ${text}`;
+      box.prepend(div);
+      if (box.children.length > 20) {
+        box.removeChild(box.lastChild);
+      }
+    }
+
+    // --- AÇÕES DO USUÁRIO ---
+    function toggleHeadlight() {
+      state.headlight = !state.headlight;
+      const btn = document.getElementById('btnHeadlight');
+      btn.classList.toggle('active', state.headlight);
+      const hex = buildPacket(0x72, state.headlight ? 1 : 0);
+      logPacket('TX BLE', `Farol -> ${hex}`, 'log-tx');
+    }
+
+    function cycleMode() {
+      state.mode = (state.mode + 1) % 3;
+      updateModeUI();
+      const hex = buildPacket(0x7B, state.mode);
+      logPacket('TX BLE', `Modo ${MODES[state.mode].name} -> ${hex}`, 'log-tx');
+    }
+
+    function updateModeUI() {
+      const modeObj = MODES[state.mode];
+      document.documentElement.style.setProperty('--theme-color', modeObj.color);
+
+      const pill = document.getElementById('modePill');
+      pill.innerText = `MODO ${modeObj.name}`;
+      pill.style.color = modeObj.color;
+      pill.style.borderColor = modeObj.color;
+
+      const btnMode = document.getElementById('btnMode');
+      document.getElementById('labelMode').innerText = modeObj.name;
+      btnMode.className = `btn-control active ${modeObj.name.toLowerCase()}`;
+    }
+
+    function toggleCruise() {
+      state.cruise = !state.cruise;
+      document.getElementById('btnCruise').classList.toggle('active', state.cruise);
+      const hex = buildPacket(0x7A, state.cruise ? 1 : 0);
+      logPacket('TX BLE', `Cruise Control -> ${hex}`, 'log-tx');
+    }
+
+    function toggleLock() {
+      if (!state.locked && state.speed > 0.5) {
+        logPacket('SEGURANÇA', 'Não é possível travar o motor com o patinete em movimento!', 'log-warn');
+        alert('Por segurança, pare o patinete antes de acionar a trava!');
+        return;
+      }
+      state.locked = !state.locked;
+      const btn = document.getElementById('btnLock');
+      btn.classList.toggle('active', state.locked);
+      btn.classList.toggle('locked', state.locked);
+      document.getElementById('labelLock').innerText = state.locked ? 'Travado' : 'Trava';
+
+      const hex = buildPacket(0x70, state.locked ? 1 : 0);
+      logPacket('TX BLE', `Trava Motor -> ${hex}`, 'log-tx');
+    }
+
+    // --- CONTROLE DE ACELERAÇÃO (SIMULADOR) ---
+    const throttleSlider = document.getElementById('throttleSlider');
+    throttleSlider.addEventListener('input', (e) => {
+      state.throttle = parseInt(e.target.value);
+      document.getElementById('throttleValue').innerText = `${state.throttle}%`;
+    });
+
+    // --- DESENHO DO VELOCÍMETRO CANVAS ---
+    const canvas = document.getElementById('gaugeCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function drawGauge() {
+      const width = canvas.width;
+      const height = canvas.height;
+      const center = { x: width / 2, y: height / 2 };
+      const radius = width / 2 - 36;
+      const startAngle = 135 * (Math.PI / 180);
+      const totalSweep = 270 * (Math.PI / 180);
+
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Trilho de fundo
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, startAngle, startAngle + totalSweep);
+      ctx.strokeStyle = '#182033';
+      ctx.lineWidth = 26;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 2. Arco Ativo
+      const maxSpd = MODES[state.mode].maxSpeed;
+      const progress = Math.min(1.0, Math.max(0.0, state.speed / maxSpd));
+      const currentSweep = totalSweep * progress;
+
+      if (currentSweep > 0.01) {
+        ctx.save();
+        ctx.shadowColor = MODES[state.mode].color;
+        ctx.shadowBlur = 18;
+
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, radius, startAngle, startAngle + currentSweep);
+        ctx.strokeStyle = MODES[state.mode].color;
+        ctx.lineWidth = 24;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 3. Traços de Graduação
+      for (let i = 0; i <= 10; i++) {
+        const angle = startAngle + totalSweep * (i / 10);
+        const innerR = radius - 24;
+        const outerR = radius - 14;
+
+        ctx.beginPath();
+        ctx.moveTo(center.x + innerR * Math.cos(angle), center.y + innerR * Math.sin(angle));
+        ctx.lineTo(center.x + outerR * Math.cos(angle), center.y + outerR * Math.sin(angle));
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+    }
+
+    // --- LOOP DE FÍSICA E ANIMAÇÃO ---
+    let lastTime = performance.now();
+    let pollTimer = 0;
+
+    function gameLoop(now) {
+      const dt = (now - lastTime) / 1000.0;
+      lastTime = now;
+
+      if (state.locked) {
+        state.targetSpeed = 0;
+        state.speed = 0;
+      } else {
+        const maxSpd = MODES[state.mode].maxSpeed;
+        state.targetSpeed = (state.throttle / 100.0) * maxSpd;
+        state.speed += (state.targetSpeed - state.speed) * Math.min(1.0, dt * 5.0);
+      }
+
+      // Odômetro acumulado
+      if (state.speed > 0) {
+        const distDelta = (state.speed / 3600.0) * dt;
+        state.tripKm += distDelta;
+        state.totalKm += distDelta;
+      }
+
+      // Atualizar interface
+      document.getElementById('speedDisplay').innerText = state.speed.toFixed(1);
+      const powerWatts = Math.round(state.speed * 12.5 * (state.mode + 1));
+      document.getElementById('powerDisplay').innerText = `${powerWatts} W`;
+      document.getElementById('tripDisplay').innerText = `${state.tripKm.toFixed(2)} km`;
+      document.getElementById('totalDisplay').innerText = `${state.totalKm.toFixed(1)} km`;
+
+      drawGauge();
+
+      // Envio de telemetria simulada periódica no log
+      pollTimer += dt;
+      if (pollTimer > 3.0 && state.speed > 0.5) {
+        pollTimer = 0;
+        const rawSpd = Math.round(state.speed * 1000).toString(16).toUpperCase().padStart(4, '0');
+        logPacket('RX TELEM', `Vel: ${state.speed.toFixed(1)} km/h • Bat: ${state.battery}% • [0x${rawSpd}]`, 'log-rx');
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Inicialização
+    updateModeUI();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
